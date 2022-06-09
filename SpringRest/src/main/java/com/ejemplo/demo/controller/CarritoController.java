@@ -6,41 +6,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ejemplo.demo.exception.ApiError;
 import com.ejemplo.demo.exception.LineaPedidoNotFoundException;
+import com.ejemplo.demo.exception.NoContentException;
 import com.ejemplo.demo.exception.PedidoNotFoundException;
+import com.ejemplo.demo.exception.ProductoNotFoundException;
+import com.ejemplo.demo.exception.UsuarioNotFoundException;
 import com.ejemplo.demo.model.LineaPedido;
 import com.ejemplo.demo.model.Pedido;
 import com.ejemplo.demo.model.Producto;
 import com.ejemplo.demo.model.Usuario;
-import com.ejemplo.demo.repository.LineaPedidoRepository;
-import com.ejemplo.demo.repository.PedidoRepository;
-import com.ejemplo.demo.repository.UsuarioRepository;
 import com.ejemplo.demo.service.LineaPedidoService;
 import com.ejemplo.demo.service.PedidoService;
 import com.ejemplo.demo.service.ProductoService;
+import com.ejemplo.demo.service.UsuarioService;
 
 @RestController
 public class CarritoController {
-
-	/**
-	 * Cambiar rutas
-	 * No puede haber 2 pathvariables juntas
-	 * El controlador no accede al repository
-	 * Cambiar excepciones: Solo mostrar el mensaje, en caso
-	 * de que no se encuentre el recurso dar 404 y no 500
-	 * put debe de recibir objetos
-	 * al hacer delete devolver 204 no content
-	 * Sustituir requestParams por requestBody
-	 * limitar la informacion que devuelven los metodos (No mostrar pedidos en usuarios p.ej)
-	 */
 	
 	@Autowired
 	private PedidoService servicePed;
@@ -52,13 +42,7 @@ public class CarritoController {
 	private LineaPedidoService serviceLinPed;
 	
 	@Autowired
-	private PedidoRepository repoPed;
-	
-	@Autowired
-	private UsuarioRepository repoUsu;
-	
-	@Autowired
-	private LineaPedidoRepository repoLinPed;
+	private UsuarioService serviceUsu;
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	//Metodos de los productos
@@ -91,18 +75,17 @@ public class CarritoController {
 	 * @return nos devuelve la lista de pedidos
 	 */
 	@GetMapping("/pedidos")
-	public ResponseEntity<List<Pedido>> findAllPed() {
+	public List<Pedido> findAllPed() throws Exception{
 		
 		List<Pedido> pedidos = servicePed.findAll();
-		ResponseEntity<List<Pedido>> findall = ResponseEntity.ok(pedidos);
 		
-		if(pedidos == null) {
+		if(pedidos.size()==0) {
 			
-			findall = ResponseEntity.notFound().build();
+			throw new NoContentException();
 			
 		}
 		
-		return findall;
+		return pedidos;
 		
 	}
 	
@@ -138,15 +121,15 @@ public class CarritoController {
 	 * @param idUsu
 	 * @return Devolvera el pedido creado o lanzara una excepcion si no existe el usuario
 	 */
-	@PostMapping("/pedidos/{idUsu}")
+	@PostMapping("/usuarios/{idUsu}/pedidos")
 	public ResponseEntity<Pedido> newPedido(@PathVariable String idUsu)throws Exception{
 			
 		
 			Pedido pedido = new Pedido();
 			servicePed.add(pedido);
-			Usuario usuBBDD = repoUsu.findById(idUsu).orElse(null);
+			Usuario usuBBDD = serviceUsu.findById(idUsu);
 			usuBBDD.getPedidos().add(0, pedido);
-			repoUsu.save(usuBBDD);
+			serviceUsu.save(usuBBDD);
 			
 			return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
 	
@@ -157,11 +140,11 @@ public class CarritoController {
 	 * @param idUsu
 	 * @param idPed
 	 */
-	@DeleteMapping("/pedidos/{idUsu}/{idPed}")
-	public Pedido eliminarPedido(@PathVariable int idPed, @PathVariable String idUsu)throws Exception {
+	@DeleteMapping("/usuarios/{idUsu}/pedidos/{idPed}")
+	public void eliminarPedido(@PathVariable int idPed, @PathVariable String idUsu)throws Exception {
 		
 		Pedido pedido = servicePed.findById(idPed);
-		Usuario usuBBDD = repoUsu.findById(idUsu).orElse(null);
+		Usuario usuBBDD = serviceUsu.findById(idUsu);
 		
 		if (pedido == null) {
 			
@@ -175,7 +158,7 @@ public class CarritoController {
 			
 		}
 		
-		return pedido;
+		throw new NoContentException();
 		
 	}
 	
@@ -186,15 +169,11 @@ public class CarritoController {
 	 * @throws Exception
 	 */
 	@PutMapping("/pedidos/{idPed}")
-	public Pedido editarPedido(@RequestBody String metodo, @PathVariable int idPed)throws Exception {
-		
-		Pedido pedido = servicePed.findById(idPed);
+	public Pedido editarPedido(@RequestBody Pedido pedido, @PathVariable int idUsu, @PathVariable int idPed)throws Exception {
 		
 		if(pedido != null ) {
 			
-			pedido.setMetodoEnvio(metodo);
-			pedido.setTotal(servicePed.precioTotal(idPed));
-			repoPed.save(pedido);
+			servicePed.add(pedido);
 			
 		} else {
 			
@@ -215,24 +194,19 @@ public class CarritoController {
 	 * @param idPed
 	 * @return Devolvera las lineas del pedido o lanzara una excepcion si no existe el pedido
 	 */
-	@GetMapping("/lineas/{idPed}")
-	public ResponseEntity<List<LineaPedido>> findAllLineas(@PathVariable int idPed)throws Exception{
+	@GetMapping("/pedidos/{idPed}/lineas")
+	public List<LineaPedido> findAllLineas(@PathVariable int idPed)throws Exception{
 		
 		List<LineaPedido> findall = servicePed.findById(idPed).getLineasPedido();
-		ResponseEntity<List<LineaPedido>> linPedFind;
 		
-		if(findall != null) {
+		if(findall.size() == 0) {
 			
-			linPedFind = ResponseEntity.ok(findall);
-			
-		} else {
-			
-			throw new PedidoNotFoundException(idPed);
+			throw new NoContentException();
 			//En el caso de que no exista ese pedido lanzará la excepcion propia
-			
+		
 		}
 		
-		return linPedFind;
+		return findall;
 		
 	}
 	
@@ -242,29 +216,28 @@ public class CarritoController {
 	 * @param idLinPed
 	 * @param cantidad
 	 */
-	@PutMapping("/lineas/{idPed}/{idLinPed}")
-	public LineaPedido putNuevaCantidad(@PathVariable int idPed, @PathVariable int idLinPed, @RequestParam double cantidad) {
+	@PutMapping("/pedidos/{idPed}/lineas/{idLinPed}")
+	public LineaPedido putNuevaCantidad(@PathVariable int idPed, @PathVariable int idLinPed, @RequestBody LineaPedido linPed) {
 		
 		Pedido pedido = servicePed.findById(idPed);
-		LineaPedido linea = repoLinPed.getById(idLinPed);
 		
 		if (pedido == null) {
 			
 			throw new PedidoNotFoundException(idPed);
 			//En el caso de que no exista ese pedido lanzará la excepcion propia
 			
-		} else if (linea == null){
+		} else if (linPed == null){
 			
 			throw new LineaPedidoNotFoundException(idLinPed);
 			
 		} else {
 			
-			serviceLinPed.edit(idLinPed, cantidad);
+			serviceLinPed.add(linPed);
 			pedido.setTotal(servicePed.precioTotal(pedido.getId()));
 			
 		}
 		
-		return linea;
+		return linPed;
 			
 	}
 	
@@ -274,11 +247,11 @@ public class CarritoController {
 	 * @param idPed
 	 * @param idLinPed
 	 */
-	@DeleteMapping("/lineas/{idPed}/{idLinPed}")
-	public LineaPedido deleteLinPed(@PathVariable int idPed, @PathVariable int idLinPed) {
+	@DeleteMapping("/pedidos/{idPed}/lineas/{idLinPed}")
+	public void deleteLinPed(@PathVariable int idPed, @PathVariable int idLinPed)throws Exception {
 
 		Pedido pedido = servicePed.findById(idPed);
-		LineaPedido linea = repoLinPed.getById(idLinPed);
+		LineaPedido linea = serviceLinPed.findById(idLinPed);
 		
 		if (pedido == null) {
 			
@@ -292,11 +265,10 @@ public class CarritoController {
 		} else {
 			
 			serviceLinPed.delete(idLinPed);
-			repoLinPed.delete(linea);
 			
 		}
 		
-		return linea;
+		throw new NoContentException();
 		
 	}
 	
@@ -307,8 +279,8 @@ public class CarritoController {
 	 * @param cant
 	 * @throws Exception
 	 */
-	@PostMapping("/lineas/{idPed}")
-	public Pedido addLinea(@PathVariable int idPed, @RequestParam int idProd, @RequestParam double cant)throws Exception {
+	@PostMapping("/pedidos/{idPed}/lineas")
+	public Pedido addLinea(@PathVariable int idPed, @RequestBody LineaPedido linPed)throws Exception {
 		
 		Pedido pedido = servicePed.findById(idPed);
 		
@@ -319,13 +291,43 @@ public class CarritoController {
 			
 		} else {
 			
-			servicePed.addLinPed(idProd, pedido, cant);
+			servicePed.addLinPed(linPed.getProducto().getId(), pedido, linPed.getCantidad());
 			pedido.setTotal(servicePed.precioTotal(pedido.getId())); 
 			
 		}
 		
 		return pedido;
 		
+	}
+	
+	@ExceptionHandler(UsuarioNotFoundException.class)
+	public ResponseEntity<ApiError> UsuarioNotFoundException(UsuarioNotFoundException usuarioException) {
+		ApiError apiError = new ApiError(usuarioException.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+	}
+	
+	@ExceptionHandler(LineaPedidoNotFoundException.class)
+	public ResponseEntity<ApiError> LineaPedidoNotFoundException(LineaPedidoNotFoundException lineaPedidoException) {
+		ApiError apiError = new ApiError(lineaPedidoException.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+	}
+	
+	@ExceptionHandler(PedidoNotFoundException.class)
+	public ResponseEntity<ApiError> PedidoNotFoundException(PedidoNotFoundException pedidoException) {
+		ApiError apiError = new ApiError(pedidoException.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+	}
+	
+	@ExceptionHandler(ProductoNotFoundException.class)
+	public ResponseEntity<ApiError> ProductoNotFoundException(ProductoNotFoundException productoException) {
+		ApiError apiError = new ApiError(productoException.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+	}
+	
+	@ExceptionHandler(NoContentException.class)
+	public ResponseEntity<ApiError> NoContentException(NoContentException noContent) {
+		ApiError apiError = new ApiError(noContent.getMessage());
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiError);
 	}
 	
 }

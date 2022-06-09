@@ -12,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Representa la entidad usuario de la BBDD
  * Un usuario estará identificado por su nick, también
@@ -36,6 +38,7 @@ public class Usuario {
 	/**
 	 * La contraseña que utilizará el usuario para iniciar sesión
 	 */
+	@JsonIgnore
 	@Column(name = "contra", nullable = false)
 	private String contra;
 	
@@ -66,6 +69,7 @@ public class Usuario {
 	/**
 	 * La lista de pedidos del usuario
 	 */
+	@JsonIgnore
 	@OneToMany(fetch=FetchType.EAGER, cascade = CascadeType.ALL)
 	private List<Pedido> pedidos;
 	

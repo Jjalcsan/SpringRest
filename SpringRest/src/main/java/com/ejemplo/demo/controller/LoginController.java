@@ -1,11 +1,14 @@
 package com.ejemplo.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ejemplo.demo.exception.ApiError;
 import com.ejemplo.demo.exception.UsuarioNotFoundException;
 import com.ejemplo.demo.model.Usuario;
 import com.ejemplo.demo.service.UsuarioService;
@@ -28,18 +31,18 @@ public class LoginController {
 	 * @throws Exception
 	 */
 	@GetMapping("/usuarios")
-	public ResponseEntity<Usuario> findById(@RequestParam String nombre, @RequestParam String contra) throws Exception{
+	public ResponseEntity<Usuario> findById(@RequestBody Usuario usuario) throws Exception{
 		
-		Usuario usuario = serviceUsu.findById(nombre);
+		Usuario usuarioBBDD = serviceUsu.findById(usuario.getNick());
 		ResponseEntity<Usuario> findbyid = ResponseEntity.notFound().build();
 		
-		if(usuario != null && usuario.getContra().equals(contra)) {
+		if(usuarioBBDD != null && usuarioBBDD.getContra().equals(usuario.getContra())) {
 			
-			findbyid = ResponseEntity.ok(usuario);
+			findbyid = ResponseEntity.ok(usuarioBBDD);
 			
 		} else {
 			
-			throw new UsuarioNotFoundException(nombre);
+			throw new UsuarioNotFoundException(usuario.getNick());
 			//En el caso de que no exista ese usuario lanzará la excepcion propia
 			
 		}
@@ -48,6 +51,11 @@ public class LoginController {
 		
 	}
 	
+	@ExceptionHandler(UsuarioNotFoundException.class)
+	public ResponseEntity<ApiError> UsuarioException(UsuarioNotFoundException UsuarioException) {
+		ApiError apiError = new ApiError(UsuarioException.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+	}
 	
 	
 }

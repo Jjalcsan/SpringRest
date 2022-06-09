@@ -67,4 +67,12 @@ public class UsuarioService {
 		return usuario.getPedidos();
 		
 	}
+	
+	/**
+	 * Guarda un usuario en la BBDD
+	 * @param usu
+	 */
+	public void save(Usuario usu) {
+		repoUsu.save(usu);
+	}
 }
