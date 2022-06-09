@@ -27,7 +27,7 @@ public class LoginController {
 	 * @return
 	 * @throws Exception
 	 */
-	@GetMapping("/usuario")
+	@GetMapping("/usuarios")
 	public ResponseEntity<Usuario> findById(@RequestParam String nombre, @RequestParam String contra) throws Exception{
 		
 		Usuario usuario = serviceUsu.findById(nombre);

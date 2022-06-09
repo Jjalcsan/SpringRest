@@ -12,28 +12,60 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+/**
+ * Representa la entidad usuario de la BBDD
+ * Un usuario estará identificado por su nick, también
+ * tendrá una contraseña, utilizará estas dos propiedades para hacer login
+ * Ademas tendrá información personal necesaria para realizar pedidos como
+ * nombre completo, email, dirección y teléfono
+ * Tendrá una lista de pedidos donde se irán añadiendo y borrando
+ * @author usuario
+ *
+ */
 @Entity
 @Table(name = "usuario")
 public class Usuario {
 
+	/**
+	 * El nick que tendrá el usuario en la aplicación del carrito de compra
+	 * Se utiliza como la ID de la entidad ya que cada nick debe de ser único
+	 */
 	@Id
 	private String nick;
 	
+	/**
+	 * La contraseña que utilizará el usuario para iniciar sesión
+	 */
 	@Column(name = "contra", nullable = false)
 	private String contra;
 	
+	/**
+	 * El nombre completo del usuario
+	 */
 	@Column(name = "nombre", nullable = false)
 	private String nombre;
 	
+	/**
+	 * El email del usuario
+	 */
 	@Column(name = "email", nullable = false)
 	private String email;
 	
+	/**
+	 * El teléfono del usuario
+	 */
 	@Column(name = "telefono", nullable = false)
 	private String telefono;
 	
+	/**
+	 * La dirección del usuario a la cual le llegará el pedido
+	 */
 	@Column(name = "direccion", nullable = false)
 	private String direccion;
 	
+	/**
+	 * La lista de pedidos del usuario
+	 */
 	@OneToMany(fetch=FetchType.EAGER, cascade = CascadeType.ALL)
 	private List<Pedido> pedidos;
 	

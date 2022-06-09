@@ -30,6 +30,17 @@ import com.ejemplo.demo.service.ProductoService;
 @RestController
 public class CarritoController {
 
+	/**
+	 * Cambiar rutas
+	 * No puede haber 2 pathvariables juntas
+	 * El controlador no accede al repository
+	 * Cambiar excepciones: Solo mostrar el mensaje, en caso
+	 * de que no se encuentre el recurso dar 404 y no 500
+	 * put debe de recibir objetos
+	 * al hacer delete devolver 204 no content
+	 * Sustituir requestParams por requestBody
+	 * limitar la informacion que devuelven los metodos (No mostrar pedidos en usuarios p.ej)
+	 */
 	
 	@Autowired
 	private PedidoService servicePed;
