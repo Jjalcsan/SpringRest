@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ejemplo.demo.exception.ApiError;
@@ -31,18 +31,18 @@ public class LoginController {
 	 * @throws Exception
 	 */
 	@GetMapping("/usuarios")
-	public ResponseEntity<Usuario> findById(@RequestBody Usuario usuario) throws Exception{
+	public ResponseEntity<Usuario> findById(@RequestParam String nick, @RequestParam String contra) throws Exception{
 		
-		Usuario usuarioBBDD = serviceUsu.findById(usuario.getNick());
+		Usuario usuarioBBDD = serviceUsu.findById(nick);
 		ResponseEntity<Usuario> findbyid = ResponseEntity.notFound().build();
 		
-		if(usuarioBBDD != null && usuarioBBDD.getContra().equals(usuario.getContra())) {
+		if(usuarioBBDD != null && usuarioBBDD.getContra().equals(contra)) {
 			
 			findbyid = ResponseEntity.ok(usuarioBBDD);
 			
 		} else {
 			
-			throw new UsuarioNotFoundException(usuario.getNick());
+			throw new UsuarioNotFoundException(nick);
 			//En el caso de que no exista ese usuario lanzará la excepcion propia
 			
 		}

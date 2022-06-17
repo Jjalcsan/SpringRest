@@ -169,7 +169,7 @@ public class CarritoController {
 	 * @throws Exception
 	 */
 	@PutMapping("/pedidos/{idPed}")
-	public Pedido editarPedido(@RequestBody Pedido pedido, @PathVariable int idUsu, @PathVariable int idPed)throws Exception {
+	public Pedido editarPedido(@RequestBody Pedido pedido, @PathVariable int idPed)throws Exception {
 		
 		if(pedido != null ) {
 			

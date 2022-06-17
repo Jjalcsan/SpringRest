@@ -34,6 +34,4 @@ public class ApiError {
 		this.mensaje = mensaje;
 	}
 	
-	
-	
 }

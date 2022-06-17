@@ -46,7 +46,6 @@ public class LineaPedido {
 	 */
 	@ManyToOne(fetch= FetchType.EAGER)
 	@JoinColumn(name = "producto_id")
-	@JsonBackReference
 	private Producto producto;
 	
 	/**
